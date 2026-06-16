@@ -42,10 +42,7 @@ Kurulum gerektirmez (sadece Node.js gerekir; v18+ önerilir).
 node 01-read-modify-write/broken.js
 node 01-read-modify-write/fixed.js
 
-# Single vs multi-thread demosu (önerilen giriş):
-node 03-single-vs-multi-thread/compare.js
-
-# Tek tek:
+# Single vs multi-thread demosu:
 node 03-single-vs-multi-thread/single-thread.js
 node 03-single-vs-multi-thread/multi-thread.js
 
@@ -65,7 +62,7 @@ node run-all.js
 | 2 | `02-shared-memory` | Birden fazla Worker thread'i aynı `SharedArrayBuffer`'a atomik olmadan oku-değiştir-yaz yapıyor; **gerçek data race** (lost update) | `Atomics.add` ile atomik işlem |
 | 3 | `03-single-vs-multi-thread` | Tek thread'de ağır CPU işi event loop'u **bloklar**; tek çekirdek kullanılır | İşi `worker_threads` ile çok çekirdeğe **paralel** dağıtmak |
 
-Dosyalar: `compare.js` (ana giriş, ikisini sırayla çalıştırır), `single-thread.js`, `multi-thread.js` (çalıştırılabilir), `cpu-task.js` (yardımcı modül, doğrudan çalıştırılmaz).
+Dosyalar: `single-thread.js`, `multi-thread.js` (çalıştırılabilir), `cpu-task.js` (yardımcı modül, doğrudan çalıştırılmaz).
 
 ## Single-thread mi, multi-thread mi? (Senaryo 3)
 
