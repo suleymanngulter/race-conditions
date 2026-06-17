@@ -159,6 +159,43 @@ karakterleri içermez. Demo, sistemde Türkçe destekleyen bir TTF (Liberation
 Sans, DejaVu Sans, Open Sans...) arar ve bulduğunu gömer; bulamazsa uyarı verip
 varsayılan fonta düşer. Üretilen `.pdf`/`.png` çıktıları `.gitignore`'dadır.
 
+### PDF üretimini optimize etmek (toplu üretim)
+
+Tek ve küçük bir PDF zaten milisaniyeler sürer; onu "optimize etmek" anlamsızdır.
+Asıl kazanç **çok sayıda PDF** üretirken ortaya çıkar. PDF içeriğini oluşturmak
+**CPU-bound** bir iştir ve ana JS thread'inde çalışır; yüzlerce faturayı seri
+üretmek event loop'u uzun süre meşgul eder ve yalnızca tek çekirdek kullanır.
+
+`benchmark.js`, aynı N faturayı iki şekilde üretip karşılaştırır:
+
+- **Seri:** hepsi ana thread'de sırayla (tek çekirdek)
+- **Paralel:** `worker_threads` ile iş çekirdeklere bölünür (Senaryo 3'ün
+  gerçek dünya uygulaması)
+
+```bash
+node 05-pdfkit-report/benchmark.js
+# parametreli:
+COUNT=400 WORKERS=8 node 05-pdfkit-report/benchmark.js
+```
+
+Örnek ölçüm (16 çekirdekli makine, 200 fatura, 8 worker):
+
+```
+SERİ (tek thread)       : ~9000 ms
+PARALEL (worker_threads): ~2600 ms   → ~3.3x hızlanma
+```
+
+Dosyalar: `lib/invoice.js` (mock veri + tek fatura üretimi), `worker.js`
+(worker'a düşen dilimi üretir), `benchmark.js` (seri vs paralel ölçüm).
+
+Diğer optimizasyon notları:
+- **child_process / cluster:** PDF üretimini ayrı process'lere de dağıtabilirsin;
+  ama `worker_threads` aynı process içinde daha hafiftir ve burada yeterlidir.
+- **Disk I/O:** Çok sayıda dosyayı aynı anda yazmak libuv thread pool'unu kullanır;
+  gerekirse `UV_THREADPOOL_SIZE` (Senaryo 4) ile artırılabilir.
+- **Stream:** PDF zaten stream olarak yazılır; tüm içeriği bellekte tutmak yerine
+  parça parça diske akıtmak bellek dostudur.
+
 ## Worker vs child_process vs cluster vs Promise
 
 | | Ne yapar | Bellek | Paralellik | Ne zaman |

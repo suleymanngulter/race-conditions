@@ -1,0 +1,16 @@
+{
+  "name": "performance-compare",
+  "version": "1.0.0",
+  "description": "Comparing multi-thread and single-thread performance on pdfkit",
+  "main": "index.js",
+  "scripts": {
+    "start": "node benchmark.js",
+    "bench": "node benchmark.js"
+},
+  "author": "suleymanngulter",
+  "license": "ISC",
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.19.1"
+  }
+}
