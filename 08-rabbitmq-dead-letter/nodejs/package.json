@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "RabbitMQ publisher → consumer → dead letter queue demo",
   "scripts": {
-    "setup": "node lib/topology.js",
+    "setup": "node setup.js",
     "publish": "node publisher.js",
     "consume": "node consumer.js",
-    "dlq": "node dlq-monitor.js",
+    "dlq": "node dlq.js",
     "demo": "node demo.js"
   },
   "license": "ISC",

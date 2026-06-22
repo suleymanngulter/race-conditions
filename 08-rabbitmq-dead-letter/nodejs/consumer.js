@@ -1,85 +1,56 @@
 const amqp = require("amqplib");
-const {
-  RABBITMQ_URL,
-  MAIN_QUEUE,
-  DLX_EXCHANGE,
-  DLQ_ROUTING_KEY,
-  MAX_MESSAGE_RETRIES,
-  PREFETCH,
-} = require("./lib/config");
-const { assertTopology } = require("./lib/topology");
-const { decodeMessage, deathCount } = require("./lib/message");
+const { URL, EX, Q, MAX_RETRIES, setup, deathCount } = require("./setup");
 
 function processOrder(order) {
   if (order.shouldFail) {
     throw new Error(`Simüle edilmiş işlem hatası: ${order.id}`);
   }
-  return { status: "processed", orderId: order.id };
 }
 
-async function sendToDlq(channel, msg, reason) {
-  const order = decodeMessage(msg.content);
-  const body = Buffer.from(
-    JSON.stringify({
-      ...order,
-      deadLetteredAt: Date.now(),
-      deadLetterReason: reason,
-      deathCount: deathCount(msg),
-    })
+function sendToDlq(channel, msg, reason) {
+  const order = JSON.parse(msg.content.toString());
+  channel.publish(
+    EX.DLX,
+    "dead",
+    Buffer.from(JSON.stringify({ ...order, deadLetterReason: reason })),
+    { persistent: true, contentType: "application/json" }
   );
-
-  channel.publish(DLX_EXCHANGE, DLQ_ROUTING_KEY, body, {
-    persistent: true,
-    contentType: "application/json",
-    headers: {
-      "x-original-routing-key": msg.fields.routingKey,
-      "x-death-count": deathCount(msg),
-      "x-dead-letter-reason": reason,
-    },
-  });
 }
 
-async function startConsumer({ onProcessed, onDeadLetter, onRetry } = {}) {
-  const connection = await amqp.connect(RABBITMQ_URL);
-  const channel = await connection.createChannel();
-  await assertTopology(channel);
-  await channel.prefetch(PREFETCH);
+async function startConsumer() {
+  const conn = await amqp.connect(URL);
+  const ch = await conn.createChannel();
+  await setup(ch);
+  await ch.prefetch(5);
 
-  console.log(`Consumer dinliyor: ${MAIN_QUEUE} (max message retry: ${MAX_MESSAGE_RETRIES})`);
+  console.log(`Consumer dinliyor: ${Q.MAIN} (max retry: ${MAX_RETRIES})`);
 
-  await channel.consume(MAIN_QUEUE, async (msg) => {
+  await ch.consume(Q.MAIN, (msg) => {
     if (!msg) return;
 
-    const order = decodeMessage(msg.content);
+    const order = JSON.parse(msg.content.toString());
     const retries = deathCount(msg);
 
     try {
-      const result = processOrder(order);
-      channel.ack(msg);
-      console.log(`ACK  ${order.id} → ${result.status}`);
-      onProcessed?.(order);
+      processOrder(order);
+      ch.ack(msg);
+      console.log(`ACK   ${order.id}`);
     } catch (err) {
-      if (retries >= MAX_MESSAGE_RETRIES) {
-        await sendToDlq(channel, msg, err.message);
-        channel.ack(msg);
-        console.log(`DLQ  ${order.id} (retry=${retries}, sebep: ${err.message})`);
-        onDeadLetter?.(order, retries);
+      if (retries >= MAX_RETRIES) {
+        sendToDlq(ch, msg, err.message);
+        ch.ack(msg);
+        console.log(`DLQ   ${order.id} (retry=${retries})`);
         return;
       }
-
-      // nack(requeue=false) → x-dead-letter-exchange (retry kuyruğu)
-      channel.nack(msg, false, false);
-      console.log(`RETRY ${order.id} (retry=${retries + 1}/${MAX_MESSAGE_RETRIES})`);
-      onRetry?.(order, retries + 1);
+      ch.nack(msg, false, false);
+      console.log(`RETRY ${order.id} (${retries + 1}/${MAX_RETRIES})`);
     }
   });
 
   return {
-    connection,
-    channel,
     async close() {
-      await channel.close();
-      await connection.close();
+      await ch.close();
+      await conn.close();
     },
   };
 }
@@ -91,4 +62,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { startConsumer, processOrder, sendToDlq };
+module.exports = { startConsumer };
