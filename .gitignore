@@ -26,3 +26,6 @@ yarn-error.log*
 07-tcp-udp-cache/**/output/
 07-tcp-udp-cache/**/node_modules/
 
+# rabbitmq dead letter demo
+08-rabbitmq-dead-letter/**/node_modules/
+

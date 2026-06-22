@@ -26,6 +26,7 @@ Race condition senaryolarının her birinin iki sürümü vardır:
 | pdfkit ile mock veriden PDF üretmek (stream tabanlı I/O) | `05-pdfkit-report` |
 | SQLite işlem hızı (Node.js vs Bun) | `06-db-test` |
 | TCP/UDP → Redis cache → RabbitMQ (Node.js vs Bun) | `07-tcp-udp-cache` |
+| RabbitMQ publisher → consumer → dead letter queue | `08-rabbitmq-dead-letter` |
 | Worker / child_process / cluster / Promise farkı | Aşağıdaki bölüm |
 | Semafor, atomic operations (kavram) | `docs/` PDF + aşağıdaki notlar |
 
@@ -81,6 +82,7 @@ node run-all.js
 | 5 | `05-pdfkit-report` | (race değil) pdfkit ile toplu PDF üretimi; seri vs worker pool benchmark (Node/Bun/Deno) | — |
 | 6 | `06-db-test` | (race değil) SQLite CRUD hızı; 10000 user seed (Node better-sqlite3 vs Bun bun:sqlite) | — |
 | 7 | `07-tcp-udp-cache` | (race değil) TCP/UDP veri alımı, Redis cache doğrulama, RabbitMQ publish; Node.js vs Bun | — |
+| 8 | `08-rabbitmq-dead-letter` | (race değil) RabbitMQ publisher → consumer; retry kuyruğu ve dead letter queue (DLQ) | — |
 
 Dosyalar (Senaryo 3): `single-thread.js`, `multi-thread.js` (çalıştırılabilir), `cpu-task.js` (yardımcı modül, doğrudan çalıştırılmaz).
 
@@ -242,6 +244,19 @@ cd 07-tcp-udp-cache/bun && bun install && bun run bench
 
 Parametreler: `COUNT`, `REQUESTS`, `CONCURRENCY`, `RUNS`. Ayrıntılar:
 `07-tcp-udp-cache/README.md`.
+
+## RabbitMQ dead letter (Senaryo 8)
+
+`08-rabbitmq-dead-letter/`, bağımsız bir RabbitMQ demosudur: publisher → consumer
+→ retry kuyruğu → dead letter queue (DLQ). Sadece `amqplib`; port `5673` /
+`15673`.
+
+```bash
+cd 08-rabbitmq-dead-letter && docker compose up -d
+cd 08-rabbitmq-dead-letter/nodejs && npm install && npm run demo
+```
+
+Ayrıntılar: `08-rabbitmq-dead-letter/README.md`.
 
 ## Worker vs child_process vs cluster vs Promise
 
