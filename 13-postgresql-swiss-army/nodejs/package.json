@@ -1,0 +1,19 @@
+{
+  "name": "postgresql-swiss-army",
+  "version": "1.0.0",
+  "description": "PostgreSQL: JSONB, FTS, pgvector, PostGIS, queue",
+  "scripts": {
+    "demo": "node src/demo.js",
+    "demos": "node src/demo.js",
+    "jsonb": "node src/demo.js jsonb",
+    "fulltext": "node src/demo.js fulltext",
+    "vector": "node src/demo.js vector",
+    "postgis": "node src/demo.js postgis",
+    "queue": "node src/demo.js queue"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1"
+  }
+}

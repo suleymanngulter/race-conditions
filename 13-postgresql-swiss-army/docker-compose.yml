@@ -1,0 +1,16 @@
+services:
+  postgres:
+    build: .
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: swiss_army
+    volumes:
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U demo -d swiss_army"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

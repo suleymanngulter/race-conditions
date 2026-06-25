@@ -30,6 +30,8 @@ Race condition senaryolarının her birinin iki sürümü vardır:
 | Redis sliding time window rate limiter | `09-redis-sliding-window` |
 | Redis sliding TTL cache (erişimde süreyi yenile) | `10-redis-sliding-ttl` |
 | Redis vs Memcached cache benchmark | `11-redis-vs-memcached` |
+| MongoDB dinamik katalog & sepet API (WiredTiger, esnek şema) | `12-mongodb-catalog-cart` |
+| PostgreSQL çoklu rol (JSONB, FTS, pgvector, PostGIS, queue) | `13-postgresql-swiss-army` |
 | Worker / child_process / cluster / Promise farkı | Aşağıdaki bölüm |
 | Semafor, atomic operations (kavram) | `docs/` PDF + aşağıdaki notlar |
 
@@ -89,6 +91,8 @@ node run-all.js
 | 9 | `09-redis-sliding-window` | (race değil) Redis ZSET ile sliding time window rate limiter | — |
 | 10 | `10-redis-sliding-ttl` | (race değil) Redis GETEX ile sliding TTL; erişimde ömür süresini yenile | — |
 | 11 | `11-redis-vs-memcached` | (race değil) Redis vs Memcached SET/GET benchmark | — |
+| 12 | `12-mongodb-catalog-cart` | (race değil) MongoDB WiredTiger + esnek şema + gömülü sepet; Express API | — |
+| 13 | `13-postgresql-swiss-army` | (race değil) PostgreSQL JSONB, FTS, pgvector, PostGIS, NOTIFY/SKIP LOCKED queue | — |
 
 Dosyalar (Senaryo 3): `single-thread.js`, `multi-thread.js` (çalıştırılabilir), `cpu-task.js` (yardımcı modül, doğrudan çalıştırılmaz).
 
@@ -300,6 +304,30 @@ cd 11-redis-vs-memcached/nodejs && npm install && npm run bench
 ```
 
 Ayrıntılar: `11-redis-vs-memcached/README.md`.
+
+## MongoDB katalog & sepet (Senaryo 12)
+
+`12-mongodb-catalog-cart/`, WiredTiger atomic güncellemeler, `Map` tabanlı esnek
+ürün özellikleri ve gömülü sepet alt dokümanları ile Express + Mongoose API.
+
+```bash
+cd 12-mongodb-catalog-cart && docker compose up -d
+cd 12-mongodb-catalog-cart/nodejs && cp .env.example .env && npm install && npm run seed && npm start
+```
+
+Ayrıntılar: `12-mongodb-catalog-cart/README.md`.
+
+## PostgreSQL Swiss Army Knife (Senaryo 13)
+
+`13-postgresql-swiss-army/`, tek PostgreSQL ile JSONB, tam metin arama, pgvector,
+PostGIS ve iş kuyruğu demolarını çalıştırır (`src/demos.js`).
+
+```bash
+cd 13-postgresql-swiss-army && docker compose up -d --build
+cd 13-postgresql-swiss-army/nodejs && cp .env.example .env && npm install && npm run demo
+```
+
+Ayrıntılar: `13-postgresql-swiss-army/README.md`.
 
 ## Worker vs child_process vs cluster vs Promise
 

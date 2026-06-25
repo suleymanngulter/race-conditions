@@ -1,0 +1,16 @@
+{
+  "name": "mongodb-catalog-cart-api",
+  "version": "1.0.0",
+  "description": "Dinamik ürün kataloğu ve sepet yönetimi — MongoDB WiredTiger + Express",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "seed": "node src/seed.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.9.5"
+  }
+}
