@@ -40,4 +40,8 @@ yarn-error.log*
 15-mongodb-sparse-index/**/node_modules/
 # benchmark çıktısı benchmark.js ile yeniden üretilir
 # 15-mongodb-sparse-index/nodejs/output/
+16-mongodb-timeseries/**/node_modules/
+16-mongodb-timeseries/nodejs/output/
+17-mongodb-telemetry-storage/**/node_modules/
+# 17-mongodb-telemetry-storage/nodejs/output/
 

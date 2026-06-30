@@ -1,0 +1,40 @@
+MongoDB Telemetri Depolama Benchmark — Normal vs Time Series
+Tarih         : 2026-06-30T12:42:43.193Z
+Sensör sayısı : 50
+Batch         : 5000
+Ölçekler      : 100,000, 500,000, 1,000,000 doküman
+
+Metrik kaynağı: db.command({ collStats })
+  storageSize     → diskte ayrılan sıkıştırılmış alan (asıl kıyas metriği)
+  totalIndexSize  → indeks B-tree boyutu
+  Tahmini ham BSON → örnek 200 dokümanın BSON.calculateObjectSize ortalaması × adet
+
+--- Özet tablo ---
+storageSize = sıkıştırılmış disk | totalSize = sıkıştırılmamış veri+indeks tahmini
+   Doküman |  storage N | storage TS | totalSize N | Tasarruf |   Oran |          N/doc |         TS/doc |  Buckets
+---------------------------------------------------------------------------------------------------------
+   100,000 |    4.48 MB |    1.88 MB |     6.50 MB |    58.2% |   2.4x |     47.0 B/doc |     19.7 B/doc |      100
+   500,000 |   22.43 MB |    4.38 MB |    32.57 MB |    80.5% |   5.1x |     47.0 B/doc |      9.2 B/doc |      500
+ 1,000,000 |   44.83 MB |    7.63 MB |    65.58 MB |    83.0% |   5.9x |     47.0 B/doc |      8.0 B/doc |     1000
+
+--- Detay (son ölçek) ---
+Doküman        : 1,000,000
+Insert süresi  : 11198 ms
+Tahmini ham BSON (sıkıştırmasız): 207.56 MB
+Normal storage : 44.83 MB + index 20.75 MB
+TS storage     : 7.63 MB + index 52.00 KB
+Normal avgObjSize (collStats): 218 B
+Sıkıştırma oranı (normal): storageSize / tahmini ham = 21.6%
+Sıkıştırma oranı (TS)     : storageSize / tahmini ham = 3.7%
+
+--- Neden Time Series daha az yer kaplar? ---
+1. Bucket yapısı: meta (sensorId, region, model) bucket başına bir kez yazılır, her ölçümde tekrarlanmaz.
+2. Columnar compression: aynı bucket içindeki temperature/humidity/pressure sütunları ayrı sıkıştırılır.
+3. Delta encoding: ardışık benzer ölçümler (1 sn aralık, yavaş değişen sensör) daha az bit ile saklanır.
+4. Normal koleksiyon: her dokümanda tam BSON + {meta.sensorId, timestamp} bileşik indeksi → çift maliyet.
+
+--- Çıkarımlar ---
+- Küçük hacimde (100K) fark sınırlı; telemetri avantajı ölçek büyüdükçe açılır.
+- Ölçüm başına byte (storageSize/count) en net karşılaştırma metriğidir.
+- totalIndexSize: normalde bileşik indeks büyür; TS'de dahili bucket indeksi minimal kalır.
+- granularity='seconds' 1 Hz ölçüm için uygundur; dakikalık veride 'minutes' seçin.

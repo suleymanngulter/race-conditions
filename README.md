@@ -34,6 +34,8 @@ Race condition senaryolarının her birinin iki sürümü vardır:
 | PostgreSQL çoklu rol (JSONB, FTS, pgvector, PostGIS, queue) | `13-postgresql-swiss-army` |
 | PostgREST — PostgreSQL doğrudan REST API (RLS) | `14-postgrest-api` |
 | MongoDB normal vs sparse index benchmark | `15-mongodb-sparse-index` |
+| MongoDB Time Series vs normal koleksiyon (IoT) | `16-mongodb-timeseries` |
+| Telemetri depolama benchmark (normal vs TS) | `17-mongodb-telemetry-storage` |
 | Worker / child_process / cluster / Promise farkı | Aşağıdaki bölüm |
 | Semafor, atomic operations (kavram) | `docs/` PDF + aşağıdaki notlar |
 
@@ -97,6 +99,8 @@ node run-all.js
 | 13 | `13-postgresql-swiss-army` | (race değil) PostgreSQL JSONB, FTS, pgvector, PostGIS, NOTIFY/SKIP LOCKED queue | — |
 | 14 | `14-postgrest-api` | (race değil) PostgREST ile tablo → REST; Row Level Security (RLS) | — |
 | 15 | `15-mongodb-sparse-index` | (race değil) Normal vs sparse index; 2M+ veri seed + benchmark + CRUD API | — |
+| 16 | `16-mongodb-timeseries` | (race değil) Time Series vs normal koleksiyon — IoT insert/storage/aggregation | — |
+| 17 | `17-mongodb-telemetry-storage` | (race değil) Telemetri depolama — çoklu ölçek collStats benchmark | — |
 
 Dosyalar (Senaryo 3): `single-thread.js`, `multi-thread.js` (çalıştırılabilir), `cpu-task.js` (yardımcı modül, doğrudan çalıştırılmaz).
 
@@ -356,6 +360,30 @@ cd 15-mongodb-sparse-index/nodejs && npm install && npm run seed && npm run benc
 ```
 
 Ayrıntılar: `15-mongodb-sparse-index/README.md`.
+
+## MongoDB Time Series (Senaryo 16)
+
+`16-mongodb-timeseries/`, 100K IoT ölçümünü normal ve time series koleksiyonuna yazar;
+insert, `collStats` ve saatlik aggregation süresini karşılaştırır.
+
+```bash
+cd 16-mongodb-timeseries && docker compose up -d
+cd 16-mongodb-timeseries/nodejs && npm install && npm start
+```
+
+Ayrıntılar: `16-mongodb-timeseries/README.md`.
+
+## Telemetri Depolama (Senaryo 17)
+
+`17-mongodb-telemetry-storage/`, telemetri verisinde normal vs Time Series
+`storageSize` farkını 100K–1M+ ölçeklerde ölçer.
+
+```bash
+cd 17-mongodb-telemetry-storage && docker compose up -d
+cd 17-mongodb-telemetry-storage/nodejs && npm install && npm start
+```
+
+Ayrıntılar: `17-mongodb-telemetry-storage/README.md`.
 
 ## Worker vs child_process vs cluster vs Promise
 

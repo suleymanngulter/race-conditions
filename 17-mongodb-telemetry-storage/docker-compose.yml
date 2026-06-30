@@ -1,0 +1,12 @@
+services:
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27019:27017"
+    environment:
+      MONGO_INITDB_DATABASE: telemetry_storage
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
