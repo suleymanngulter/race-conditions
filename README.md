@@ -36,6 +36,7 @@ Race condition senaryolarının her birinin iki sürümü vardır:
 | MongoDB normal vs sparse index benchmark | `15-mongodb-sparse-index` |
 | MongoDB Time Series vs normal koleksiyon (IoT) | `16-mongodb-timeseries` |
 | Telemetri depolama benchmark (normal vs TS) | `17-mongodb-telemetry-storage` |
+| MongoDB secondary index türleri (production) | `18-mongodb-secondary-indexes` |
 | Worker / child_process / cluster / Promise farkı | Aşağıdaki bölüm |
 | Semafor, atomic operations (kavram) | `docs/` PDF + aşağıdaki notlar |
 
@@ -101,6 +102,7 @@ node run-all.js
 | 15 | `15-mongodb-sparse-index` | (race değil) Normal vs sparse index; 2M+ veri seed + benchmark + CRUD API | — |
 | 16 | `16-mongodb-timeseries` | (race değil) Time Series vs normal koleksiyon — IoT insert/storage/aggregation | — |
 | 17 | `17-mongodb-telemetry-storage` | (race değil) Telemetri depolama — çoklu ölçek collStats benchmark | — |
+| 18 | `18-mongodb-secondary-indexes` | (race değil) Secondary index türleri — equality, compound, TTL, text, … | — |
 
 Dosyalar (Senaryo 3): `single-thread.js`, `multi-thread.js` (çalıştırılabilir), `cpu-task.js` (yardımcı modül, doğrudan çalıştırılmaz).
 
@@ -384,6 +386,17 @@ cd 17-mongodb-telemetry-storage/nodejs && npm install && npm start
 ```
 
 Ayrıntılar: `17-mongodb-telemetry-storage/README.md`.
+
+## Secondary Index (Senaryo 18)
+
+`18-mongodb-secondary-indexes/`, 11 indeks türünü production sorgu örnekleriyle gösterir.
+
+```bash
+cd 18-mongodb-secondary-indexes && docker compose up -d
+cd 18-mongodb-secondary-indexes/nodejs && npm install && npm start
+```
+
+Ayrıntılar: `18-mongodb-secondary-indexes/README.md`.
 
 ## Worker vs child_process vs cluster vs Promise
 

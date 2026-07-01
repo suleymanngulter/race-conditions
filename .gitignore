@@ -44,4 +44,6 @@ yarn-error.log*
 16-mongodb-timeseries/nodejs/output/
 17-mongodb-telemetry-storage/**/node_modules/
 # 17-mongodb-telemetry-storage/nodejs/output/
+18-mongodb-secondary-indexes/**/node_modules/
+# 18-mongodb-secondary-indexes/nodejs/output/
 

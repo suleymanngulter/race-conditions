@@ -1,0 +1,138 @@
+MongoDB Secondary Index Benchmark — Karşılaştırmalı Rapor
+════════════════════════════════════════════════════════════════════════
+Tarih     : 2026-07-01T06:31:52.271Z
+Veri      : 250.000 kullanıcı | 200.000 sipariş
+Ölçüm     : A/B/C/D/E/F → 10 tekrar medyan | G → insert tek (warm-cache, disk I/O yok)
+
+=== SINIRLAMALAR — WARM-CACHE BENCHMARK ===
+Bu ölçüm WiredTiger cache SICAKKEN yapılır. Disk I/O dahil DEĞİLDİR.
+• Seed (bulkWrite) veriyi RAM'e yazar; ölçüm sırası cache bias'ını tamamen gidermez.
+• ms farkları (örn. IXSCAN ~1ms vs COLLSCAN ~30ms) yönü doğrudur; disk-bound ortamda COLLSCAN DAHA YAVAŞ olur.
+• Güvenilir metrikler: totalDocsExamined, stage, keysExamined (cache'den bağımsız).
+• Cold-disk ölçümü: mongod restart veya ayrı cold-start ortamı gerekir.
+
+════════════════════════════════════════════════════════════════════════
+A) EQUALITY — Tekil arama (yüksek seçicilik)
+════════════════════════════════════════════════════════════════════════
+Sorgu  : findOne({ username: "user-125000" })
+Kayıt  : 250.000
+
+                   | İndeks YOK             | Secondary { username: 1 }
+──────────────────── | ────────────────────── | ──────────────────────
+Medyan süre (10 tekrar) | 34.1 ms                | 0.6 ms
+Docs examined      | 250.000                | 1
+Keys examined      | 0                      | 1
+Stage              | COLLSCAN               | IXSCAN
+Hız farkı          | —                      | 59x daha hızlı
+Doc azalması       | 250.000                | 100.0% daha az doc
+
+Sonuç  : ✓ MANTIKLI — IXSCAN 1 doc; COLLSCAN tüm koleksiyonu tarar
+
+════════════════════════════════════════════════════════════════════════
+B) KÜÇÜK KOLEKSİYON — İndeks gerekli mi?
+════════════════════════════════════════════════════════════════════════
+Sorgu  : findOne({ username: "small-400" })
+Kayıt  : 800
+
+                   | İndeks YOK             | Secondary { username: 1 }
+──────────────────── | ────────────────────── | ──────────────────────
+Medyan süre (10 tekrar) | 0.6 ms                 | 0.5 ms
+Docs examined      | 800                    | 1
+Keys examined      | 0                      | 1
+Stage              | COLLSCAN               | IXSCAN
+Hız farkı          | —                      | 1x daha hızlı
+Doc azalması       | 800                    | 99.9% daha az doc
+
+Sonuç  : ✗ GEREKSIZ — hız farkı yok; indeks RAM maliyeti var (+28672 B indeks RAM)
+
+════════════════════════════════════════════════════════════════════════
+C) COMPOUND INDEX — ESR kuralı
+════════════════════════════════════════════════════════════════════════
+Sorgu  : C1: find({ userId }).sort({ createdAt: -1 }).limit(20)
+Kayıt  : 200.000
+
+                   | Yanlış: yalnızca sort (prefix yok) | Doğru: userId + sort (ESR)
+──────────────────── | ────────────────────── | ──────────────────────
+Medyan süre (10 tekrar) | 50.9 ms                | 1.0 ms
+Docs examined      | 200.000                | 20
+Keys examined      | 0                      | 20
+Stage              | COLLSCAN               | IXSCAN
+Hız farkı          | —                      | 51x daha hızlı
+Doc azalması       | 200.000                | 100.0% daha az doc
+
+Sonuç  : ✓ MANTIKLI prefix kullanımı; yalnızca sort → COLLSCAN
+
+════════════════════════════════════════════════════════════════════════
+D) DÜŞÜK SEÇİCİLİK — İndeks şüpheli
+════════════════════════════════════════════════════════════════════════
+Sorgu  : find({ status: "shipped" })  — ~%50 eşleşme
+Kayıt  : 200.000
+İndeks : {status}
+
+  Medyan süre (10 tekrar): 398.9 ms
+  Docs examined   : 100.000
+  Keys examined   : 100.000
+  Stage           : IXSCAN
+
+Sonuç  : ⚠ ŞÜPHELİ — IXSCAN ama çok doc okunur; indeks boyutu vs kazanç tartışılır
+Not     : Medyan süre hem IXSCAN+FETCH hem de ~100.000 doc'un network'e aktarılmasını içerir — index verimliliği docsExamined/keysExamined'dan okunmalı.
+
+════════════════════════════════════════════════════════════════════════
+E) COVERED QUERY — İndeks yeterli
+════════════════════════════════════════════════════════════════════════
+Sorgu  : find({ email }, { email: 1, name: 1, _id: 0 })
+Kayıt  : 50.000
+İndeks : {email,name}
+
+  Medyan süre (10 tekrar): 0.6 ms
+  Docs examined   : 0
+  Keys examined   : 1
+  Stage           : IXSCAN
+
+Sonuç  : ✓ MANTIKLI — PROJECTION_COVERED, döküman fetch yok
+
+════════════════════════════════════════════════════════════════════════
+F) YANLIŞ ALAN — İndeks sorguya uymuyor
+════════════════════════════════════════════════════════════════════════
+Sorgu  : find({ bio: /user 099999/ })  — indeks: username only
+Kayıt  : 100.000
+İndeks : username only
+
+  Medyan süre (10 tekrar): 50.9 ms
+  Docs examined   : 100.000
+  Keys examined   : 0
+  Stage           : COLLSCAN
+
+Sonuç  : ✗ MANTIKSIZ — sorgulanan alan indekslenmemiş → COLLSCAN
+
+════════════════════════════════════════════════════════════════════════
+G) YAZMA MALİYETİ — Insert
+════════════════════════════════════════════════════════════════════════
+Sorgu  : 20.000 doküman insertMany
+Kayıt  : 20.000
+
+                   | 0 secondary index      | 5 secondary index
+──────────────────── | ────────────────────── | ──────────────────────
+Insert süresi (tek ölçüm) | 114.7 ms               | 223.2 ms
+Oran               | baseline               | 1.95x yavaş
+
+Sonuç  : ⚠ MALİYET — 1.95x yavaş; okuma için eklenen her indeks yazmayı yavaşlatır
+
+════════════════════════════════════════════════════════════════════════
+ÖZET KARAR TABLOSU
+════════════════════════════════════════════════════════════════════════
+
+Senaryo            | İndeks YOK / Yanlış    | Secondary / Doğru
+──────────────────── | ────────────────────── | ──────────────────────
+A Equality 250K    | 34.1 ms COLLSCAN       | 0.6 ms IXSCAN
+B Küçük 800        | 0.6 ms (fark yok)      | 0.5 ms +RAM
+C Compound         | 50.9 ms COLLSCAN       | 1.0 ms IXSCAN
+G Insert 20K       | 114.7 ms               | 223.2 ms (1.95x yavaş)
+
+Ne zaman secondary index?
+  ✓ Büyük koleksiyon + yüksek seçicilik (A, E)
+  ✓ Compound sorgu ESR sırasına uyuyorsa (C1)
+  ✗ Küçük koleksiyon (B) — maliyet > kazanç
+  ✗ Düşük seçicilik (D) — indeks var ama çok doc okunur
+  ✗ Sorgu indekslenmemiş alanda (F)
+  ⚠ Yoğun yazma + çok indeks (G)

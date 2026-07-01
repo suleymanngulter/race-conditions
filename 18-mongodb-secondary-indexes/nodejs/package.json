@@ -1,0 +1,16 @@
+{
+  "name": "mongodb-secondary-indexes",
+  "version": "1.0.0",
+  "description": "MongoDB secondary index türleri — production örnekleri",
+  "main": "src/demo.js",
+  "scripts": {
+    "start": "node src/demo.js",
+    "benchmark": "node src/benchmark.js",
+    "seed": "node src/seed.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "mongodb": "^6.12.0"
+  }
+}
